@@ -1,5 +1,7 @@
 # LangGraph SQL Agent Chatbot
 
+https://github.com/user-attachments/assets/5e9ffb46-d567-4c01-90de-81324e289eb9
+
 This project is a web-based chatbot that acts as an intelligent SQL Agent. It uses **LangGraph** to create a stateful agent that can understand natural language, generate its own SQL queries, and interact with a **SQLite** database to answer questions.
 
 The backend is built with **FastAPI** and streams responses using Server-Sent Events (SSE). The frontend is a single, self-contained **HTML file** using **Tailwind CSS** that provides a clean, real-time chat interface.
