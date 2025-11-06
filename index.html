@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangGraph SQL Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Simple scrollbar for webkit browsers */
+        #message-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #message-area::-webkit-scrollbar-thumb {
+            background-color: #d1d5db;
+            /* gray-400 */
+            border-radius: 3px;
+        }
+
+        #message-area::-webkit-scrollbar-track {
+            background-color: #f9fafb;
+            /* gray-50 */
+        }
+
+        /* Style for code blocks */
+        pre {
+            white-space: pre-wrap;
+            /* CSS 3 */
+            white-space: -moz-pre-wrap;
+            /* Mozilla, since 1999 */
+            white-space: -pre-wrap;
+            /* Opera 4-6 */
+            white-space: -o-pre-wrap;
+            /* Opera 7 */
+            word-wrap: break-word;
+            /* Internet Explorer 5.5+ */
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 font-sans antialiased">
+
+    <div class="flex justify-center bg-gray-100 min-h-screen py-8 px-4">
+        <div
+            class="w-full md:w-[70%] bg-white flex flex-col rounded-xl shadow-lg border border-gray-100 overflow-hidden h-[90vh]">
+
+            <header
+                class="relative flex items-center justify-between px-8 py-5 bg-gradient-to-r from-[#4A3F71] to-[#5E507F] z-10">
+                <div class="absolute inset-0 opacity-5 mix-blend-overlay"></div>
+                <div
+                    class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent">
+                </div>
+                <div class="flex items-center relative">
+                    <div
+                        class="absolute -left-3 top-1/2 transform -translate-y-1/2 w-1.5 h-6 bg-teal-400 rounded-full opacity-80">
+                    </div>
+                    <span class="font-bold text-white text-xl tracking-tight">SQL Agent </span>
+                </div>
+                <div class="flex items-center space-x-1">
+                    <a
+                        class="text-white bg-white/10 text-xs px-4 py-2 font-medium hover:bg-white/15 rounded-lg transition-all duration-200 cursor-pointer">CHAT</a>
+                </div>
+            </header>
+
+            <div id="message-area" class="flex-grow overflow-y-auto bg-[#FCFCF8] border-b border-gray-100"
+                style="min-height: 0">
+                <div id="message-container" class="max-w-4xl mx-auto p-6">
+                    <div class="flex justify-start mb-5">
+                        <div class="flex flex-col max-w-md">
+                            <div
+                                class="rounded-lg py-3 px-5 bg-[#F3F3EE] text-gray-800 border border-gray-200 rounded-bl-none shadow-sm">
+                                Hi there! I'm your SQL assistant. Ask me about the employees database.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form id="chat-form" class="p-4 bg-white">
+                <div class="flex items-center bg-[#F9F9F5] rounded-full p-3 shadow-md border border-gray-200">
+
+                    <button type="button"
+                        class="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                    </button>
+                    <input type="text" id="message-input" placeholder=" How many employees are in Engineering?"
+                        class="flex-grow px-4 py-2 bg-transparent focus:outline-none text-gray-700" />
+                    <button type="submit"
+                        class="bg-gradient-to-r from-teal-500 to-teal-400 hover:from-teal-600 hover:to-teal-500 rounded-full p-3 ml-2 shadow-md transition-all duration-200 group">
+                        <svg class="w-6 h-6 text-white transform rotate-45 group-hover:scale-110 transition-transform duration-200"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- STATE ---
+        let checkpointId = null;
+
+        // --- DOM REFERENCES ---
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const messageArea = document.getElementById('message-area');
+        const messageContainer = document.getElementById('message-container');
+
+        // --- HELPER FUNCTIONS ---
+
+        /**
+         * Scrolls the message area to the bottom.
+         */
+        function scrollToBottom() {
+            messageArea.scrollTop = messageArea.scrollHeight;
+        }
+
+        /**
+         * Creates the HTML for the typing animation.
+         */
+        function createTypingAnimationHTML() {
+            return `
+                <div class="flex items-center space-x-1.5">
+                    <div class="w-1.5 h-1.5 bg-gray-400/70 rounded-full animate-pulse" style="animation-duration: 1s; animation-delay: 0ms"></div>
+                    <div class="w-1.5 h-1.5 bg-gray-400/70 rounded-full animate-pulse" style="animation-duration: 1s; animation-delay: 300ms"></div>
+                    <div class="w-1.5 h-1.5 bg-gray-400/70 rounded-full animate-pulse" style="animation-duration: 1s; animation-delay: 600ms"></div>
+                </div>`;
+        }
+
+        /**
+         * Creates the HTML for the SQL stages UI.
+         */
+        function createSqlStagesHTML(toolInfo) {
+            if (!toolInfo || !toolInfo.stages || toolInfo.stages.length === 0) return '';
+
+            const stages = toolInfo.stages;
+            const query = toolInfo.query;
+            const result = toolInfo.result;
+
+            let queryingHTML = '';
+            let resultHTML = '';
+            let writingHTML = '';
+
+            // Querying Stage
+            if (stages.includes('querying')) {
+                const hasResult = stages.includes('reading_result');
+                queryingHTML = `
+                    <div class="relative">
+                        <div class="absolute -left-3 top-1 w-2.5 h-2.5 bg-teal-400 rounded-full z-10 shadow-sm"></div>
+                        ${hasResult ? '<div class="absolute -left-[7px] top-3 w-0.5 h-[calc(100%+1rem)] bg-gradient-to-b from-teal-300 to-teal-200"></div>' : ''}
+                        <div class="flex flex-col">
+                            <span class="font-medium mb-2 ml-2">Executing SQL Query</span>
+                            <div class="flex flex-wrap gap-2 pl-2 mt-1">
+                                <pre class="bg-gray-100 text-xs px-3 py-2 rounded border border-gray-200 inline-flex items-center font-mono text-left w-full overflow-x-auto"><code>${query}</code></pre>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            // Reading Result Stage
+            if (stages.includes('reading_result')) {
+                resultHTML = `
+                    <div class="relative">
+                        <div class="absolute -left-3 top-1 w-2.5 h-2.5 bg-teal-400 rounded-full z-10 shadow-sm"></div>
+                        <div class="flex flex-col">
+                            <span class="font-medium mb-2 ml-2">Received Result</span>
+                            <div class="pl-2 space-y-1">
+                                <div class="bg-gray-100 text-xs px-3 py-2 rounded border border-gray-200 text-left max-w-full overflow-x-auto">
+                                    ${String(result)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            // Writing Stage
+            if (stages.includes('writing')) {
+                writingHTML = `
+                    <div class="relative">
+                        <div class="absolute -left-3 top-1 w-2.5 h-2.5 bg-teal-400 rounded-full z-10 shadow-sm"></div>
+                        <span class="font-medium pl-2">Writing answer</span>
+                    </div>`;
+            }
+
+            return `
+                <div class="mb-3 mt-1 relative pl-4">
+                    <div class="flex flex-col space-y-4 text-sm text-gray-700">
+                        ${queryingHTML}
+                        ${resultHTML}
+                        ${writingHTML}
+                    </div>
+                </div>`;
+        }
+
+        // --- EVENT HANDLER ---
+
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const userInput = messageInput.value.trim();
+            if (!userInput) return;
+
+            // 1. Add User Message to DOM
+            const userMessageHTML = `
+                <div class="flex justify-end mb-5">
+                    <div class="flex flex-col max-w-md">
+                        <div class="rounded-lg py-3 px-5 bg-gradient-to-br from-[#5E507F] to-[#4A3F71] text-white rounded-br-none shadow-md">
+                            ${userInput}
+                        </div>
+                    </div>
+                </div>`;
+            messageContainer.innerHTML += userMessageHTML;
+            messageInput.value = ''; // Clear input
+
+            // 2. Add AI Placeholder to DOM
+            const aiResponseId = 'ai-msg-' + Date.now();
+            const aiPlaceholderHTML = `
+                <div id="${aiResponseId}" class="flex justify-start mb-5">
+                    <div class="flex flex-col max-w-md w-full">
+                        <div class="tool-stages-container"></div>
+                        <div class="message-content-wrapper rounded-lg py-3 px-5 bg-[#F3F3EE] text-gray-800 border border-gray-200 rounded-bl-none shadow-sm">
+                            ${createTypingAnimationHTML()}
+                        </div>
+                    </div>
+                </div>`;
+            messageContainer.innerHTML += aiPlaceholderHTML;
+            scrollToBottom();
+
+            // 3. Get references to the new AI message elements
+            const aiMessageNode = document.getElementById(aiResponseId);
+            const toolContainer = aiMessageNode.querySelector('.tool-stages-container');
+            const contentContainer = aiMessageNode.querySelector('.message-content-wrapper');
+
+            // 4. Connect to SSE
+            let url = `http://127.0.0.1:8000/chat_stream/${encodeURIComponent(userInput)}`;
+            if (checkpointId) {
+                url += `?checkpoint_id=${encodeURIComponent(checkpointId)}`;
+            }
+
+            const eventSource = new EventSource(url);
+            let streamedContent = "";
+            let toolData = null;
+            let hasReceivedContent = false;
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+
+                    switch (data.type) {
+                        case 'checkpoint':
+                            checkpointId = data.checkpoint_id;
+                            break;
+
+                        case 'content':
+                            if (!hasReceivedContent) {
+                                contentContainer.innerHTML = ''; // Clear typing animation
+                                hasReceivedContent = true;
+                            }
+                            streamedContent += data.content;
+                            contentContainer.innerText = streamedContent; // Use innerText to preserve formatting
+                            scrollToBottom();
+                            break;
+
+                        case 'sql_query_start':
+                            toolData = { stages: ['querying'], query: data.query, result: null };
+                            toolContainer.innerHTML = createSqlStagesHTML(toolData);
+                            scrollToBottom();
+                            break;
+
+                        case 'sql_query_result':
+                            if (toolData) {
+                                toolData.stages.push('reading_result');
+                                toolData.result = data.result;
+                                toolContainer.innerHTML = createSqlStagesHTML(toolData);
+                                scrollToBottom();
+                            }
+                            break;
+
+                        case 'end':
+                            if (toolData && !toolData.stages.includes('writing')) {
+                                toolData.stages.push('writing');
+                                toolContainer.innerHTML = createSqlStagesHTML(toolData);
+                                scrollToBottom();
+                            }
+                            eventSource.close();
+                            break;
+                    }
+                } catch (error) {
+                    console.error("Error parsing event data:", error, event.data);
+                }
+            };
+
+            eventSource.onerror = (error) => {
+                console.error("EventSource error:", error);
+                eventSource.close();
+                if (!hasReceivedContent) {
+                    contentContainer.innerHTML = `<span class="text-red-500">Sorry, there was an error processing your request.</span>`;
+                }
+            };
+        });
+    </script>
+</body>
+
+</html>
