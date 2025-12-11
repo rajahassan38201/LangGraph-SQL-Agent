@@ -7,7 +7,7 @@ from langgraph.graph import add_messages, StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, ToolMessage, SystemMessage
-from dotenv import load_dotenv
+from dotenv import load_dotenv 
 
 from fastapi import FastAPI, Query
 from fastapi.responses import StreamingResponse
@@ -181,4 +181,5 @@ async def chat_stream(message: str, checkpoint_id: Optional[str] = Query(None)):
 # Run the app
 if __name__ == "__main__":
     setup_database() # Create and populate the database on startup
+
     uvicorn.run(app, host="127.0.0.1", port=8000)
