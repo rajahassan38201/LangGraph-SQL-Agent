@@ -13,6 +13,7 @@ from fastapi import FastAPI, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+
 # Import database setup and tools from sql.py
 from sql import setup_database, list_tables_tool, query_sql_tool, tools
 
@@ -183,3 +184,4 @@ if __name__ == "__main__":
     setup_database() # Create and populate the database on startup
 
     uvicorn.run(app, host="127.0.0.1", port=8000)
+
