@@ -6,7 +6,7 @@ This project is a web-based chatbot that acts as an intelligent SQL Agent. It us
 
 The backend is built with **FastAPI** and streams responses using Server-Sent Events (SSE). The frontend is a single, self-contained **HTML file** using **Tailwind CSS** that provides a clean, real-time chat interface.
 
-## 🚀 Features
+## 🚀 Features 
 
   * **Natural Language Queries**: Ask "Who has the highest salary?" instead of writing `SELECT Name FROM Employees ORDER BY Salary DESC LIMIT 1`.
   * **Streaming Responses**: The AI's answer streams back token-by-token, just like modern chatbots.
