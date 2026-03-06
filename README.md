@@ -1,4 +1,4 @@
-# LangGraph SQL Agent Chatbot
+# LangGraph SQL Agent Chatbot 
 
 https://github.com/user-attachments/assets/5e9ffb46-d567-4c01-90de-81324e289eb9
 
