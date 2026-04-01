@@ -1,4 +1,4 @@
-import json 
+import json
 import uvicorn
 from typing import TypedDict, Annotated, Optional
 from uuid import uuid4
